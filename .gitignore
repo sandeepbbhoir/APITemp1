@@ -1,0 +1,7 @@
+﻿.vs/
+obj/
+/Core/Application/bin/Debug/net9.0
+/Core/Domain/bin/Debug/net9.0
+/Infrastructure/Infrastructure/bin/Debug/net9.0
+/Presentation/ASPNET/bin/Debug/net9.0
+/Presentation/BackEndApi/bin/Debug/net9.0
