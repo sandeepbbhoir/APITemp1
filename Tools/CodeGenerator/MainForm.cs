@@ -63,28 +63,29 @@ namespace CodeGenerator
                 MessageBox.Show("Please select an entity.");
                 return;
             }
+            var basePath = "E:\\RepoFinal\\Asp.Net-Core-Inventory-Order-Management-System";
             string entityName = cmbEntities.SelectedItem.ToString();
             string excelPath = @"E:\RepoFinal\Asp.Net-Core-Inventory-Order-Management-System\Entity.xlsx";
             var entityDef = ExcelReader.GetEntityDefinition(excelPath, entityName);
 
             // 1. Domain: Entity class
-            string domainPath = $"..\\..\\..\\Core\\Domain\\Entities\\{entityName}.cs";
+            string domainPath = $"{basePath}\\Core\\Domain\\Entities\\{entityName}.cs";
             File.WriteAllText(domainPath, GenerateEntityClass(entityDef));
 
             // 2. Application: Manager class in Features
-            string appManagerPath = $"..\\..\\..\\Core\\Application\\Features\\{entityName}Manager.cs";
+            string appManagerPath = $"{basePath}\\Core\\Application\\Features\\{entityName}Manager.cs";
             File.WriteAllText(appManagerPath, GenerateManagerClass(entityDef));
 
             // 3. Infrastructure: Configuration class
-            string infraConfigPath = $"..\\..\\..\\Infrastructure\\Infrastructure\\DataAccessManager\\EFCore\\Configurations\\{entityName}Configuration.cs";
+            string infraConfigPath = $"{basePath}\\Infrastructure\\Infrastructure\\DataAccessManager\\EFCore\\Configurations\\{entityName}Configuration.cs";
             File.WriteAllText(infraConfigPath, GenerateConfigurationClass(entityDef));
 
             // 4. Infrastructure: Add DbSet and ApplyConfiguration to DataContext
-            string dataContextPath = "..\\..\\..\\Infrastructure\\Infrastructure\\DataAccessManager\\EFCore\\Contexts\\DataContext.cs";
+            string dataContextPath = $"{basePath}\\Infrastructure\\Infrastructure\\DataAccessManager\\EFCore\\Contexts\\DataContext.cs";
             UpdateDataContext(dataContextPath, entityDef);
 
             // 5. BackEndApi: Controller
-            string controllerPath = $"..\\..\\..\\Presentation\\BackEndApi\\BackEnd\\Controllers\\{entityName}Controller.cs";
+            string controllerPath = $"{basePath}\\Presentation\\BackEndApi\\BackEnd\\Controllers\\{entityName}Controller.cs";
             File.WriteAllText(controllerPath, GenerateControllerClass(entityDef));
 
             MessageBox.Show($"Code generated for: {entityName}");
@@ -99,7 +100,17 @@ namespace CodeGenerator
             sb.AppendLine($"    public class {entity.Name}");
             sb.AppendLine("    {");
             foreach (var prop in entity.Properties)
-                sb.AppendLine($"        public {prop.Type} {prop.Name} {{ get; set; }}");
+            {
+                if (prop.Required == "Yes")
+                {
+                    sb.AppendLine($"        public required {prop.Type} {prop.Name} {{ get; set; }}");
+                }
+                else
+                {
+                    sb.AppendLine($"        public {prop.Type}? {prop.Name} {{ get; set; }}");
+                }
+            }
+                   
             sb.AppendLine("    }");
             sb.AppendLine("}");
             return sb.ToString();
@@ -107,16 +118,12 @@ namespace CodeGenerator
 
         private string GenerateManagerClass(CodeGenerator.EntityDefinition entity)
         {
-            var sb = new StringBuilder();
-            sb.AppendLine("using Domain.Entities;");
-            sb.AppendLine($"namespace Application.Features");
-            sb.AppendLine("{");
-            sb.AppendLine($"    public class {entity.Name}Manager");
-            sb.AppendLine("    {");
-            sb.AppendLine($"        // Add manager logic for {entity.Name}");
-            sb.AppendLine("    }");
-            sb.AppendLine("}");
-            return sb.ToString();
+            string templatePath = "Tools/CodeGenerator/Templates/ManagerSample.txt";
+            if (!File.Exists(templatePath))
+                throw new FileNotFoundException($"Template file not found: {templatePath}");
+            string template = File.ReadAllText(templatePath);
+            string result = template.Replace("{EntityName}", entity.Name);
+            return result;
         }
 
         private string GenerateConfigurationClass(CodeGenerator.EntityDefinition entity)

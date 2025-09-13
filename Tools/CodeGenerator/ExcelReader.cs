@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using ClosedXML.Excel;
 
 namespace CodeGenerator
@@ -7,6 +8,9 @@ namespace CodeGenerator
     {
         public string Name { get; set; }
         public string Type { get; set; }
+        public string Required { get; set; }
+        public string MaxLength { get; set; }
+        public string MinLength { get; set; }
     }
 
     public class EntityDefinition
@@ -22,12 +26,11 @@ namespace CodeGenerator
             var entities = new HashSet<string>();
             using (var workbook = new XLWorkbook(excelPath))
             {
-                var worksheet = workbook.Worksheet(1); // Assumes first worksheet
-                foreach (var row in worksheet.RowsUsed())
+                foreach (var worksheet in workbook.Worksheets)
                 {
-                    var entityName = row.Cell(1).GetString(); // Assumes entity name is in first column
-                    if (!string.IsNullOrWhiteSpace(entityName))
-                        entities.Add(entityName);
+                    var sheetName = worksheet.Name;
+                    if (!string.IsNullOrWhiteSpace(sheetName))
+                        entities.Add(sheetName);
                 }
             }
             return new List<string>(entities);
@@ -38,18 +41,24 @@ namespace CodeGenerator
             var entity = new EntityDefinition { Name = entityName };
             using (var workbook = new XLWorkbook(excelPath))
             {
-                var worksheet = workbook.Worksheet(1);
-                foreach (var row in worksheet.RowsUsed())
+                var worksheet = workbook.Worksheet(entityName);
+                foreach (var row in worksheet.RowsUsed().Skip(1))
                 {
-                    var name = row.Cell(1).GetString();
-                    if (name == entityName)
+                    var propName = row.Cell(2).GetString();
+                    var propType = row.Cell(3).GetString();
+                    var required = row.Cell(6).GetString();
+                    var maxLength = row.Cell(7).GetString();
+                    var minLength = row.Cell(8).GetString();
+                    if (!string.IsNullOrWhiteSpace(propName) && !string.IsNullOrWhiteSpace(propType))
                     {
-                        var propName = row.Cell(2).GetString();
-                        var propType = row.Cell(3).GetString();
-                        if (!string.IsNullOrWhiteSpace(propName) && !string.IsNullOrWhiteSpace(propType))
+                        entity.Properties.Add(new EntityProperty
                         {
-                            entity.Properties.Add(new EntityProperty { Name = propName, Type = propType });
-                        }
+                            Name = propName,
+                            Type = propType,
+                            Required = required,
+                            MaxLength = maxLength,
+                            MinLength = minLength
+                        });
                     }
                 }
             }

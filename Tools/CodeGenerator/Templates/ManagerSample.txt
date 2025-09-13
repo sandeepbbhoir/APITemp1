@@ -1,0 +1,9 @@
+using Domain.Entities;
+
+namespace Application.Features
+{
+    public class {EntityName}Manager
+    {
+        // Add manager logic for {EntityName}
+    }
+}
